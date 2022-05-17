@@ -4,7 +4,12 @@ and guesses which object was chosen.
 
 Uses OpenCV and NumPy
 
+COMPLETED:
+colour detection
+object detection
+
 # TODOs:
 # computer guesses
-# better colour ranges
+# map more colours
 # better readibility 
+# get the intersection of detecting a colour and a object

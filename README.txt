@@ -3,6 +3,8 @@ User picks an object and says its colour. The computer searches all objects of t
 and guesses which object was chosen.
 
 Uses OpenCV and NumPy
+Uses COCO dataset and model
+Uses ColorLabeler from (https://www.pyimagesearch.com/2016/02/15/determining-object-color-with-opencv/)
 
 COMPLETED:
 colour detection

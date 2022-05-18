@@ -86,9 +86,6 @@ if __name__ == "__main__":
     print("Press q to quit.")
 
     while True:
-        # # objects to guess from
-        # obj_list = []
-
         # user inputs colour
         colour = input("I spy something that is...")
 
@@ -135,7 +132,6 @@ if __name__ == "__main__":
                             # add object to object list
                             if classNames[classId-1] not in obj_list:
                                 obj_list.append(classNames[classId-1])
-            # print(obj_list)
 
             # start guessing thread
             if flag == 0:

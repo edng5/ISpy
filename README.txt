@@ -9,9 +9,8 @@ Uses ColorLabeler from (https://www.pyimagesearch.com/2016/02/15/determining-obj
 COMPLETED:
 colour detection
 object detection
+computer guesses
 
 # TODOs:
-# computer guesses
 # map more colours
-# better readibility 
 # get the intersection of detecting a colour and a object

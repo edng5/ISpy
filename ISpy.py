@@ -1,12 +1,13 @@
 # I Spy by Edward Ng
 # User picks an object and says its colour. The computer searches all objects of that colour in view
 # and guesses which object was chosen.
-# 5/17/2022
+# 5/18/2022
 
 import cv2
 import numpy as np
 from ColorLabeler import ColorLabeler
 import imutils
+import threading
 
 def map_colours(colour, frame):
     '''converts colour string to cv colour range.'''
@@ -17,9 +18,50 @@ def map_colours(colour, frame):
     if colour == "blue":
         return cv2.inRange(frame, (50,0,0), (255, 50, 50))
 
+# GLOBAL variables
+# objects to guess from
+obj_list = []
+
+class myThread (threading.Thread):
+    '''Simple thread class.'''
+    def __init__(self, threadID, name, counter):
+        # initialize thread
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.counter = counter
+
+    def run(self):
+        '''run thread.'''
+        # Get lock to synchronize threads
+        threadLock.acquire()
+        guess_object()
+        # Free lock to release next thread
+        threadLock.release()
+
+def guess_object():
+    '''Guesses objects in global object list.'''
+    # guesses objects in the list
+    run = 1
+    while run:
+        for obj in obj_list:
+            guess = input("Is "+obj+" your object?")
+            # ends game if object was guessed correctly
+            if guess == "yes":
+                print("I have guessed your object!")
+                run = 0
+                break
+            else:
+                continue
+
 if __name__ == "__main__":
     # set game state
     game_state = 1
+    flag = 0
+
+    # initialize thread
+    threadLock = threading.Lock()
+    thread = myThread(1, "Thread-1", 1)
 
     # create video capture
     cap = cv2.VideoCapture(0)
@@ -44,8 +86,8 @@ if __name__ == "__main__":
     print("Press q to quit.")
 
     while True:
-        # objects to guess from
-        obj_list = []
+        # # objects to guess from
+        # obj_list = []
 
         # user inputs colour
         colour = input("I spy something that is...")
@@ -93,20 +135,19 @@ if __name__ == "__main__":
                             # add object to object list
                             if classNames[classId-1] not in obj_list:
                                 obj_list.append(classNames[classId-1])
+            # print(obj_list)
 
-            # # guesses objects in the list
-            # for obj in obj_list:
-            #     guess = input("Is "+obj+" your object?")
-            #     # ends game if object was guessed correctly
-            #     if guess == "yes":
-            #         print("I have guessed your object!")
-            #         game_state = 0
-            #         break
-            #     else:
-            #         continue
+            # start guessing thread
+            if flag == 0:
+                thread.start()
+                flag = 1
 
             # output camera
             cv2.imshow("I Spy", frame)
+
+            # terminate because object was guessed
+            if not thread.isAlive():
+                game_state = 0
 
         # release camera
         cap.release()

@@ -1,22 +1,13 @@
 # I Spy by Edward Ng
 # User picks an object and says its colour. The computer searches all objects of that colour in view
 # and guesses which object was chosen.
-# 5/18/2022
+# 2/16/2023
 
 import cv2
 import numpy as np
 from ColorLabeler import ColorLabeler
 import imutils
 import threading
-
-def map_colours(colour, frame):
-    '''converts colour string to cv colour range.'''
-    if colour == "red":
-        return cv2.inRange(frame, (0, 0, 50), (50, 50,255))
-    if colour == "green":
-        return cv2.inRange(frame, (0,50,0), (50, 255, 50))
-    if colour == "blue":
-        return cv2.inRange(frame, (50,0,0), (255, 50, 50))
 
 # GLOBAL variables
 # objects to guess from
@@ -25,23 +16,26 @@ obj_list = []
 class myThread (threading.Thread):
     '''Simple thread class.'''
     def __init__(self, threadID, name, counter):
-        # initialize thread
+        '''initialize thread'''
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.counter = counter
 
     def run(self):
-        '''run thread.'''
+        '''Run thread.'''
         # Get lock to synchronize threads
         threadLock.acquire()
+
         guess_object()
+
         # Free lock to release next thread
         threadLock.release()
 
 def guess_object():
-    '''Guesses objects in global object list.'''
-    # guesses objects in the list
+    '''Guesses objects in global object list.
+    :Returns: None
+    '''
     run = 1
     while run:
         for obj in obj_list:
@@ -53,6 +47,20 @@ def guess_object():
                 break
             else:
                 continue
+
+def map_colours(colour, frame):
+    '''Converts colour string to cv colour range.
+    :param colour: string of a colour
+    :param frame: the image
+
+    :Returns: cv2 colour range
+    '''
+    if colour == "red":
+        return cv2.inRange(frame, (0, 0, 50), (50, 50,255))
+    if colour == "green":
+        return cv2.inRange(frame, (0,50,0), (50, 255, 50))
+    if colour == "blue":
+        return cv2.inRange(frame, (50,0,0), (255, 50, 50))
 
 if __name__ == "__main__":
     # set game state
@@ -141,7 +149,7 @@ if __name__ == "__main__":
             # output camera
             cv2.imshow("I Spy", frame)
 
-            # terminate because object was guessed
+            # terminate loop because object was guessed
             if not thread.isAlive():
                 game_state = 0
 

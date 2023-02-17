@@ -8,6 +8,7 @@ import numpy as np
 from ColorLabeler import ColorLabeler
 import imutils
 import threading
+import pytesseract
 
 # GLOBAL variables
 # objects to guess from
@@ -56,15 +57,16 @@ def map_colours(colour, frame):
     :Returns: cv2 colour range
     '''
     if colour == "red":
-        return cv2.inRange(frame, (0, 0, 50), (50, 50,255))
+        return cv2.inRange(frame, (160,20,70), (190,255,255))
     if colour == "green":
-        return cv2.inRange(frame, (0,50,0), (50, 255, 50))
+        return cv2.inRange(frame, (50, 20, 20), (100, 255, 255))
     if colour == "blue":
-        return cv2.inRange(frame, (50,0,0), (255, 50, 50))
+        return cv2.inRange(frame, (101,50,38), (110,255,255))
 
 if __name__ == "__main__":
     # set game state
     game_state = 1
+    running = 1
     flag = 0
 
     # initialize thread
@@ -93,7 +95,7 @@ if __name__ == "__main__":
 
     print("Press q to quit.")
 
-    while True:
+    while running:
         # user inputs colour
         colour = input("I spy something that is...")
 
@@ -106,40 +108,47 @@ if __name__ == "__main__":
             # break from loop
             if cv2.waitKey(1) == ord('q'):
                 break
-            
+
             # convert to hsv colorspace
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-            # find the colours specified by user
-            mask = map_colours(colour, frame)
+            # find the colors within the boundaries
+            mask = map_colours(colour, hsv)
+
             #define kernel size  
             kernel = np.ones((7,7),np.uint8)
+
             # Remove unnecessary noise from mask
+
             mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
-            # find contours in the frame
-            cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                cv2.CHAIN_APPROX_SIMPLE)
-            cnts = imutils.grab_contours(cnts)
+            # Segment only the detected region
+            segmented_img = cv2.bitwise_and(frame, frame, mask=mask)
 
-            # run detect on frame
-            classIds, confs, bbox = net.detect(frame, confThreshold=0.5)
+            # Find contours from the mask
 
-            for contour in cnts:
-                if len(classIds) != 0:
+            contours, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # output = cv2.drawContours(frame, contours, -1, (0, 255, 0), 3)
+            try:
+                for contour in contours:
+                    x,y,w,h = cv2.boundingRect(contour)
+                    cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
+                    cropped_image = frame[y:y+h, x:x+w] # add padding
+                    # run detect on frame
+                    classIds, confs, bbox = net.detect(cropped_image, confThreshold=0.5)
                     for classId, conf, box in zip(classIds.flatten(), confs.flatten(), bbox):
-                        # run ColorLabeler on frame
-                        obj_colour = cl.label(frame, contour)
-                        # if the colour in the frame is the same as the colour chosen by the user
-                        if  obj_colour == colour:  
-                            # draw and label the frame
-                            cv2.rectangle(frame, box, color=(0,255,0), thickness=2)
-                            cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
-                            cv2.putText(frame, classNames[classId - 1].upper(), (box[0] + 10, box[1] + 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
-                            # add object to object list
-                            if classNames[classId-1] not in obj_list:
+                        cv2.rectangle(frame, (x,y),(x+w,y+h), color=(0,255,0), thickness=2)
+                        cv2.putText(frame, classNames[classId - 1].upper(), (x + 10, y + 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
+                        if classNames[classId-1] not in obj_list:
                                 obj_list.append(classNames[classId-1])
+            except:
+                pass
+            
+            # terminate loop because no objects detected
+            # if len(obj_list) == 0:
+            #     game_state = 0
 
             # start guessing thread
             if flag == 0:
@@ -158,6 +167,4 @@ if __name__ == "__main__":
         cv2.destroyAllWindows()
 
         # play condition
-        play = input("Keep playing?")
-        if play == "no":
-            break
+        running = 0

@@ -5,10 +5,7 @@
 
 import cv2
 import numpy as np
-from ColorLabeler import ColorLabeler
-import imutils
 import threading
-import pytesseract
 
 # GLOBAL variables
 # objects to guess from
@@ -99,9 +96,6 @@ if __name__ == "__main__":
         # user inputs colour
         colour = input("I spy something that is...")
 
-        # initialize ColorLabeler
-        cl = ColorLabeler()
-
         while game_state:
             _, frame = cap.read()
 
@@ -119,7 +113,6 @@ if __name__ == "__main__":
             kernel = np.ones((7,7),np.uint8)
 
             # Remove unnecessary noise from mask
-
             mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
@@ -127,16 +120,15 @@ if __name__ == "__main__":
             segmented_img = cv2.bitwise_and(frame, frame, mask=mask)
 
             # Find contours from the mask
-
             contours, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # output = cv2.drawContours(frame, contours, -1, (0, 255, 0), 3)
             try:
                 for contour in contours:
                     x,y,w,h = cv2.boundingRect(contour)
                     cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
                     cropped_image = frame[y:y+h, x:x+w] # add padding
-                    # run detect on frame
+
+                    # run detect on cropped portion
                     classIds, confs, bbox = net.detect(cropped_image, confThreshold=0.5)
                     for classId, conf, box in zip(classIds.flatten(), confs.flatten(), bbox):
                         cv2.rectangle(frame, (x,y),(x+w,y+h), color=(0,255,0), thickness=2)
@@ -146,9 +138,6 @@ if __name__ == "__main__":
             except:
                 pass
             
-            # terminate loop because no objects detected
-            # if len(obj_list) == 0:
-            #     game_state = 0
 
             # start guessing thread
             if flag == 0:

@@ -7,16 +7,10 @@ Uses OpenCV and NumPy
 
 Uses COCO dataset and model
 
-Uses ColorLabeler from (https://www.pyimagesearch.com/2016/02/15/determining-object-color-with-opencv/)
-
 # COMPLETED:
-colour detection
-
-object detection
+colour detection and object classification
 
 computer guesses
 
 # TODOs:
  map more colours
- 
- get the intersection of detecting a colour and a object

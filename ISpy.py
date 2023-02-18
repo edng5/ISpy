@@ -1,7 +1,7 @@
 # I Spy by Edward Ng
 # User picks an object and says its colour. The computer searches all objects of that colour in view
 # and guesses which object was chosen.
-# 2/16/2023
+# 2/18/2023
 
 import cv2
 import numpy as np
@@ -92,68 +92,73 @@ if __name__ == "__main__":
 
     print("Press q to quit.")
 
-    while running:
-        # user inputs colour
-        colour = input("I spy something that is...")
+    # while running:
+    # user inputs colour
+    colour = input("I spy something that is...")
 
-        while game_state:
-            _, frame = cap.read()
+    while game_state:
+        _, frame = cap.read()
 
-            # break from loop
-            if cv2.waitKey(1) == ord('q'):
-                break
+        # break from loop
+        if cv2.waitKey(1) == ord('q'):
+            break
 
-            # convert to hsv colorspace
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        # convert to hsv colorspace
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-            # find the colors within the boundaries
-            mask = map_colours(colour, hsv)
+        # find the colors within the boundaries
+        mask = map_colours(colour, hsv)
 
-            #define kernel size  
-            kernel = np.ones((7,7),np.uint8)
+        #define kernel size  
+        kernel = np.ones((7,7),np.uint8)
 
-            # Remove unnecessary noise from mask
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        # Remove unnecessary noise from mask
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
-            # Segment only the detected region
-            segmented_img = cv2.bitwise_and(frame, frame, mask=mask)
+        # Segment only the detected region
+        segmented_img = cv2.bitwise_and(frame, frame, mask=mask)
 
-            # Find contours from the mask
-            contours, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Find contours from the mask
+        contours, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            try:
-                for contour in contours:
-                    x,y,w,h = cv2.boundingRect(contour)
-                    cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
-                    cropped_image = frame[y:y+h, x:x+w] # add padding
+        # crop frame containing object of colour
+        try:
+            for contour in contours:
+                x,y,w,h = cv2.boundingRect(contour)
+                # add padding to boundaries to allow more information
+                y1 = y-h//2
+                x1 = x-w//2
+                y2 = y+h+h//2
+                x2 = x+w+w//2
+                cropped_image = frame[y1:y2, x1:x2]
+                area = (y2 - y1)*(x2 - x1)
 
-                    # run detect on cropped portion
+                # run detect on cropped portion
+                if area > 8000:
                     classIds, confs, bbox = net.detect(cropped_image, confThreshold=0.5)
                     for classId, conf, box in zip(classIds.flatten(), confs.flatten(), bbox):
-                        cv2.rectangle(frame, (x,y),(x+w,y+h), color=(0,255,0), thickness=2)
-                        cv2.putText(frame, classNames[classId - 1].upper(), (x + 10, y + 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
+                        cv2.rectangle(frame, (x1,y1),(x2,y2), color=(0,255,0), thickness=2)
+                        cv2.putText(frame, classNames[classId - 1].upper(), (x1 + 10, y1 + 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
                         if classNames[classId-1] not in obj_list:
                                 obj_list.append(classNames[classId-1])
-            except:
-                pass
-            
+        except:
+            pass
+        
 
-            # start guessing thread
-            if flag == 0:
-                thread.start()
-                flag = 1
+        # start guessing thread
+        if flag == 0:
+            thread.start()
+            flag = 1
 
-            # output camera
-            cv2.imshow("I Spy", frame)
+        # output camera
+        cv2.imshow("I Spy", frame)
 
-            # terminate loop because object was guessed
-            if not thread.isAlive():
-                game_state = 0
+        # terminate loop because object was guessed
+        if not thread.isAlive():
+            game_state = 0
 
-        # release camera
-        cap.release()
-        cv2.destroyAllWindows()
+    # release camera
+    cap.release()
+    cv2.destroyAllWindows()
 
-        # play condition
-        running = 0

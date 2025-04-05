@@ -1,5 +1,7 @@
 # I Spy by Edward Ng (2023)
 
+![](preview/ispy_1.png)
+
 The classic children game I Spy, where the user chooses an object, says its colour and the opponent has to guess what that object is.
 
 This game is written in Python and uses the OpenCV and NumPy libraries. It also uses a pretrained COCO model that is trained on the COCO dataset. This model
